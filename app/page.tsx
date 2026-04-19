@@ -7,6 +7,7 @@ import { getSelectionSortSteps } from './algorithms/selectionSort'
 import { getInsertionSortSteps } from './algorithms/insertionSort'
 import { getMergeSortSteps } from './algorithms/mergeSort'
 import { getQuickSortSteps } from './algorithms/quickSort'
+import ComplexityBadge from './components/ComplexityBadge'
 
 function getSteps(algo, arr) {
   if (algo === 'Bubble Sort') return getBubbleSortSteps(arr)
@@ -17,23 +18,15 @@ function getSteps(algo, arr) {
   return getBubbleSortSteps(arr)
 }
 
-const COMPLEXITY = {
-  'Bubble Sort': { time: 'O(n²)', space: 'O(1)' },
-  'Selection Sort': { time: 'O(n²)', space: 'O(1)' },
-  'Insertion Sort': { time: 'O(n²)', space: 'O(1)' },
-  'Merge Sort': { time: 'O(n log n)', space: 'O(n)' },
-  'Quick Sort': { time: 'O(n log n)', space: 'O(log n)' },
-}
-
 async function getAIExplanation(algo, step, setExplanation) {
   setExplanation('🤔 Thinking...')
   try {
     const prompt = `You are a friendly DSA teacher explaining ${algo} to a beginner student.
 Current step: Array is [${step.array}].
 ${step.done
-  ? 'The array is now fully sorted!'
-  : `Comparing positions ${step.comparing} with values ${step.comparing.map(i => step.array[i])}.${step.swapped ? ' A swap just happened!' : ' No swap needed.'}`
-}
+      ? 'The array is now fully sorted!'
+      : `Comparing positions ${step.comparing} with values ${step.comparing.map(i => step.array[i])}.${step.swapped ? ' A swap just happened!' : ' No swap needed.'}`
+      }
 Explain this step in 2-3 simple sentences. Be friendly, clear, and mention WHY this step matters.`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -126,9 +119,6 @@ export default function Home() {
 
   const current = steps[currentStep]
   const isDone = current?.done
-  const complexity = COMPLEXITY[selectedAlgo]
-
-  // Max value for normalizing bar heights
   const maxVal = Math.max(...(current?.array || [1]))
 
   if (showSplash) {
@@ -141,27 +131,12 @@ export default function Home() {
         transition: 'opacity 0.5s ease',
       }}>
         <div style={{ fontSize: '5rem' }}>🧠</div>
-        <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff', letterSpacing: '-1px' }}>
+        <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff' }}>
           DSA Visualizer
         </h1>
         <p style={{ fontSize: '1.1rem', color: '#444' }}>
           Learn algorithms. Watch them come alive.
         </p>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '32px' }}>
-          {[0, 1, 2].map((i) => (
-            <div key={i} style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              backgroundColor: '#6c63ff',
-              animation: `bounce 0.8s ${i * 0.2}s infinite alternate`,
-            }} />
-          ))}
-        </div>
-        <style>{`
-          @keyframes bounce {
-            from { transform: translateY(0px); opacity: 0.3; }
-            to { transform: translateY(-10px); opacity: 1; }
-          }
-        `}</style>
       </div>
     )
   }
@@ -172,7 +147,6 @@ export default function Home() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <Sidebar selectedAlgo={selectedAlgo} onSelect={setSelectedAlgo} />
 
-        {/* MAIN AREA */}
         <div style={{
           flex: 1,
           display: 'flex',
@@ -184,28 +158,16 @@ export default function Home() {
           alignItems: 'center',
         }}>
 
-          {/* ALGO TITLE + COMPLEXITY */}
+          {/* TITLE + CLEAN BADGE */}
           <div style={{ textAlign: 'center' }}>
-            <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold', marginBottom: '8px' }}>
+            <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold' }}>
               {selectedAlgo}
             </h2>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <span style={{
-                backgroundColor: '#1a1a2e', color: '#6c63ff',
-                padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem'
-              }}>
-                ⏱ Time: {complexity.time}
-              </span>
-              <span style={{
-                backgroundColor: '#1a2e1a', color: '#22c55e',
-                padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem'
-              }}>
-                💾 Space: {complexity.space}
-              </span>
-            </div>
+
+            <ComplexityBadge algo={selectedAlgo} />
           </div>
 
-          {/* BARS — fixed height container, bars grow from bottom */}
+          {/* BARS */}
           <div style={{
             width: '100%',
             maxWidth: '600px',
@@ -239,102 +201,12 @@ export default function Home() {
                   color: '#fff',
                   fontSize: '0.8rem',
                   fontWeight: 'bold',
-                  transition: 'height 0.3s ease, background-color 0.2s ease',
-                  boxShadow: isComparing ? `0 0 12px ${barColor}88` : 'none',
+                  transition: 'all 0.3s ease',
                 }}>
                   {value}
                 </div>
               )
             })}
-          </div>
-
-          {/* STATUS */}
-          <div style={{
-            color: isDone ? '#22c55e' : '#666',
-            fontSize: '0.9rem',
-            textAlign: 'center',
-            minHeight: '20px'
-          }}>
-            {isDone ? '✅ Array sorted successfully!'
-              : current?.swapped
-              ? `🔄 Swapped positions ${current?.comparing?.[0]} and ${current?.comparing?.[1]}`
-              : `🔍 Comparing positions ${current?.comparing?.[0]} and ${current?.comparing?.[1]}`}
-          </div>
-
-          {/* AI BOX */}
-          <div style={{
-            backgroundColor: '#111',
-            border: '1px solid #1e1e1e',
-            borderLeft: '3px solid #6c63ff',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            maxWidth: '600px',
-            width: '100%',
-            color: '#bbb',
-            fontSize: '0.88rem',
-            lineHeight: '1.7',
-            minHeight: '72px',
-          }}>
-            <div style={{ color: '#6c63ff', fontWeight: 'bold', marginBottom: '6px', fontSize: '0.8rem' }}>
-              🤖 AI EXPLANATION
-            </div>
-            {explanation}
-          </div>
-
-          {/* SPEED */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: '#444', fontSize: '0.82rem' }}>🐢 Slow</span>
-            <input type="range" min="100" max="1000" step="100"
-              value={1100 - speed}
-              onChange={(e) => setSpeed(1100 - Number(e.target.value))}
-              style={{ width: '140px', accentColor: '#6c63ff', cursor: 'pointer' }}
-            />
-            <span style={{ color: '#444', fontSize: '0.82rem' }}>Fast ⚡</span>
-          </div>
-
-          {/* CONTROLS */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={() => setCurrentStep(p => Math.max(0, p - 1))} style={btnStyle}>
-              ⬅ Prev
-            </button>
-            <button onClick={() => setIsPlaying(p => !p)} style={{
-              ...btnStyle,
-              backgroundColor: '#6c63ff',
-              color: '#fff',
-              border: '1px solid #6c63ff',
-              padding: '10px 32px',
-            }}>
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
-            <button onClick={() => setCurrentStep(p => Math.min(steps.length - 1, p + 1))} style={btnStyle}>
-              Next ➡
-            </button>
-            <button onClick={handleReset} style={btnStyle}>
-              🔄 Reset
-            </button>
-          </div>
-
-          {/* LEGEND + STEP */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {[
-                { color: '#6c63ff', label: 'Unsorted' },
-                { color: '#facc15', label: 'Comparing' },
-                { color: '#ef4444', label: 'Swapping' },
-                { color: '#22c55e', label: 'Sorted' },
-              ].map((item) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{
-                    width: '10px', height: '10px',
-                    borderRadius: '3px', backgroundColor: item.color
-                  }} />
-                  <span style={{ color: '#444', fontSize: '0.78rem' }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ color: '#2a2a2a', fontSize: '0.78rem' }}>
-              Step {currentStep} / {steps.length - 1}
-            </p>
           </div>
 
         </div>
