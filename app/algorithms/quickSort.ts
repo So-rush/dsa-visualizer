@@ -1,4 +1,4 @@
-export function getQuickSortSteps(arr) {
+export function getQuickSortSteps(arr: number[]) {
   const steps = []
   const array = [...arr]
 

@@ -1,4 +1,4 @@
-export function getBubbleSortSteps(arr) {
+export function getBubbleSortSteps(arr: number[]) { {
   const steps = []
   const array = [...arr]
   const n = array.length

@@ -1,4 +1,4 @@
-export function getSelectionSortSteps(arr) {
+export function getSelectionSortSteps(arr: number[]) {
   const steps = []
   const array = [...arr]
   const n = array.length

@@ -1,4 +1,4 @@
-export function getMergeSortSteps(arr) {
+export function getMergeSortSteps(arr: number[]) {
   const steps = []
   const array = [...arr]
 

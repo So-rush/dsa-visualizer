@@ -1,4 +1,4 @@
-export function getInsertionSortSteps(arr) {
+export function getInsertionSortSteps(arr: number[]) {
   const steps = []
   const array = [...arr]
   const n = array.length
