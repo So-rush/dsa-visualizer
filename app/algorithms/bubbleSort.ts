@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function getBubbleSortSteps(arr: number[]) {
   const steps: any[] = []
   const array = [...arr]
