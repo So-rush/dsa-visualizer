@@ -1,8 +1,7 @@
 export function getSelectionSortSteps(arr: number[]) {
-  const steps = []
+  const steps: any[] = []
   const array = [...arr]
   const n = array.length
-
   for (let i = 0; i < n - 1; i++) {
     let minIdx = i
     for (let j = i + 1; j < n; j++) {

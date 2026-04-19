@@ -1,8 +1,8 @@
 export function getQuickSortSteps(arr: number[]) {
-  const steps = []
+  const steps: any[] = []
   const array = [...arr]
 
-  function partition(arr, low, high) {
+  function partition(arr: number[], low: number, high: number) {
     const pivot = arr[high]
     let i = low - 1
     for (let j = low; j < high; j++) {
@@ -18,7 +18,7 @@ export function getQuickSortSteps(arr: number[]) {
     return i + 1
   }
 
-  function quickSort(arr, low, high) {
+  function quickSort(arr: number[], low: number, high: number) {
     if (low < high) {
       const pi = partition(arr, low, high)
       quickSort(arr, low, pi - 1)

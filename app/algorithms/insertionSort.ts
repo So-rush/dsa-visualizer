@@ -1,8 +1,7 @@
 export function getInsertionSortSteps(arr: number[]) {
-  const steps = []
+  const steps: any[] = []
   const array = [...arr]
   const n = array.length
-
   for (let i = 1; i < n; i++) {
     let j = i
     while (j > 0 && array[j - 1] > array[j]) {

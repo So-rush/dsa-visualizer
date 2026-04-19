@@ -1,8 +1,7 @@
-export function getBubbleSortSteps(arr: number[]) { {
-  const steps = []
+export function getBubbleSortSteps(arr: number[]) {
+  const steps: any[] = []
   const array = [...arr]
   const n = array.length
-
   for (let i = 0; i < n - 1; i++) {
     for (let j = 0; j < n - i - 1; j++) {
       steps.push({ array: [...array], comparing: [j, j + 1], swapped: false })

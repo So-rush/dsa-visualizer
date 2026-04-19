@@ -1,26 +1,22 @@
 export function getMergeSortSteps(arr: number[]) {
-  const steps = []
+  const steps: any[] = []
   const array = [...arr]
 
-  function merge(arr, left, mid, right) {
+  function merge(arr: number[], left: number, mid: number, right: number) {
     const leftArr = arr.slice(left, mid + 1)
     const rightArr = arr.slice(mid + 1, right + 1)
     let i = 0, j = 0, k = left
-
     while (i < leftArr.length && j < rightArr.length) {
       steps.push({ array: [...arr], comparing: [left + i, mid + 1 + j], swapped: false })
-      if (leftArr[i] <= rightArr[j]) {
-        arr[k++] = leftArr[i++]
-      } else {
-        arr[k++] = rightArr[j++]
-      }
+      if (leftArr[i] <= rightArr[j]) { arr[k++] = leftArr[i++] }
+      else { arr[k++] = rightArr[j++] }
       steps.push({ array: [...arr], comparing: [k - 1], swapped: true })
     }
     while (i < leftArr.length) { arr[k++] = leftArr[i++] }
     while (j < rightArr.length) { arr[k++] = rightArr[j++] }
   }
 
-  function mergeSort(arr, left, right) {
+  function mergeSort(arr: number[], left: number, right: number) {
     if (left < right) {
       const mid = Math.floor((left + right) / 2)
       mergeSort(arr, left, mid)
