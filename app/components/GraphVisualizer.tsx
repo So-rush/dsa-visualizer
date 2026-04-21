@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
+import { getBFSSteps } from '../algorithms/bfs'
+import { getDFSSteps } from '../algorithms/dfs'
 
-// Default graph
 const DEFAULT_NODES = [
   { id: 0 }, { id: 1 }, { id: 2 }, { id: 3 },
   { id: 4 }, { id: 5 }, { id: 6 },
@@ -17,99 +18,35 @@ const DEFAULT_EDGES = [
   { source: 2, target: 6 },
 ]
 
-// BFS steps generator
-function getBFSSteps(nodes, edges, startId = 0) {
-  const steps = []
-  const visited = new Set()
-  const queue = [startId]
-  const adj = {}
-  nodes.forEach(n => adj[n.id] = [])
-  edges.forEach(e => {
-    adj[e.source].push(e.target)
-    adj[e.target].push(e.source)
-  })
-
-  visited.add(startId)
-
-  while (queue.length > 0) {
-    const node = queue.shift()
-    steps.push({
-      visitedNodes: [...visited],
-      currentNode: node,
-      queue: [...queue],
-      type: 'visit'
-    })
-
-    for (const neighbor of adj[node]) {
-      if (!visited.has(neighbor)) {
-        visited.add(neighbor)
-        queue.push(neighbor)
-        steps.push({
-          visitedNodes: [...visited],
-          currentNode: node,
-          exploringEdge: { source: node, target: neighbor },
-          queue: [...queue],
-          type: 'explore'
-        })
-      }
-    }
-  }
-
-  steps.push({ visitedNodes: [...visited], currentNode: null, done: true })
-  return steps
-}
-
-// DFS steps generator
-function getDFSSteps(nodes, edges, startId = 0) {
-  const steps = []
-  const visited = new Set()
-  const adj = {}
-  nodes.forEach(n => adj[n.id] = [])
-  edges.forEach(e => {
-    adj[e.source].push(e.target)
-    adj[e.target].push(e.source)
-  })
-
-  function dfs(node) {
-    visited.add(node)
-    steps.push({
-      visitedNodes: [...visited],
-      currentNode: node,
-      type: 'visit'
-    })
-
-    for (const neighbor of adj[node]) {
-      if (!visited.has(neighbor)) {
-        steps.push({
-          visitedNodes: [...visited],
-          currentNode: node,
-          exploringEdge: { source: node, target: neighbor },
-          type: 'explore'
-        })
-        dfs(neighbor)
-      }
-    }
-  }
-
-  dfs(startId)
-  steps.push({ visitedNodes: [...visited], currentNode: null, done: true })
-  return steps
-}
-
 export default function GraphVisualizer({ algo }) {
   const svgRef = useRef(null)
+  const containerRef = useRef(null)
   const [steps, setSteps] = useState([])
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(800)
   const intervalRef = useRef(null)
-  const simulationRef = useRef(null)
   const nodePositions = useRef({})
+  const [dimensions, setDimensions] = useState({ width: 600, height: 320 })
+
+  // Measure container size
+  useEffect(() => {
+    if (!containerRef.current) return
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        setDimensions({ width: Math.floor(width), height: Math.floor(height) })
+      }
+    })
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   // Generate steps when algo changes
   useEffect(() => {
     setIsPlaying(false)
     setCurrentStep(0)
+    nodePositions.current = {}
     const s = algo === 'BFS'
       ? getBFSSteps(DEFAULT_NODES, DEFAULT_EDGES)
       : getDFSSteps(DEFAULT_NODES, DEFAULT_EDGES)
@@ -140,27 +77,26 @@ export default function GraphVisualizer({ algo }) {
     if (!svgRef.current || steps.length === 0) return
 
     const current = steps[currentStep]
-    const width = 560
-    const height = 340
+    const { width, height } = dimensions
 
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
 
     const nodes = DEFAULT_NODES.map(n => ({
       ...n,
-      x: nodePositions.current[n.id]?.x,
-      y: nodePositions.current[n.id]?.y,
+      x: nodePositions.current[n.id]?.x ?? width / 2,
+      y: nodePositions.current[n.id]?.y ?? height / 2,
     }))
 
     const links = DEFAULT_EDGES.map(e => ({ ...e }))
 
     const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(90))
-      .force('charge', d3.forceManyBody().strength(-300))
+      .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(40))
-
-    simulationRef.current = simulation
+      .force('collision', d3.forceCollide().radius(36))
+      .force('x', d3.forceX(width / 2).strength(0.05))
+      .force('y', d3.forceY(height / 2).strength(0.05))
 
     // Draw edges
     const link = svg.append('g')
@@ -169,18 +105,18 @@ export default function GraphVisualizer({ algo }) {
       .join('line')
       .attr('stroke', d => {
         const e = current.exploringEdge
-        if (e && ((e.source === d.source.id && e.target === d.target.id) ||
-          (e.source === d.target.id && e.target === d.source.id))) {
-          return '#6c63ff'
-        }
+        if (e && (
+          (e.source === d.source.id && e.target === d.target.id) ||
+          (e.source === d.target.id && e.target === d.source.id)
+        )) return '#6c63ff'
         return '#2a2a2a'
       })
       .attr('stroke-width', d => {
         const e = current.exploringEdge
-        if (e && ((e.source === d.source.id && e.target === d.target.id) ||
-          (e.source === d.target.id && e.target === d.source.id))) {
-          return 3
-        }
+        if (e && (
+          (e.source === d.source.id && e.target === d.target.id) ||
+          (e.source === d.target.id && e.target === d.source.id)
+        )) return 3
         return 2
       })
 
@@ -192,15 +128,16 @@ export default function GraphVisualizer({ algo }) {
       .attr('cursor', 'grab')
 
     node.append('circle')
-      .attr('r', 24)
+      .attr('r', 26)
       .attr('fill', d => {
         if (current.done) return '#22c55e'
         if (d.id === current.currentNode) return '#facc15'
         if (current.visitedNodes?.includes(d.id)) return '#6c63ff'
-        return '#1a1a1a'
+        return '#1e1e1e'
       })
       .attr('stroke', d => {
         if (d.id === current.currentNode) return '#facc15'
+        if (current.visitedNodes?.includes(d.id)) return '#6c63ff'
         return '#333'
       })
       .attr('stroke-width', 2)
@@ -212,8 +149,9 @@ export default function GraphVisualizer({ algo }) {
       .attr('fill', '#fff')
       .attr('font-size', '14px')
       .attr('font-weight', 'bold')
+      .attr('pointer-events', 'none')
 
-    // Drag behavior
+    // Drag
     const drag = d3.drag()
       .on('start', (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart()
@@ -231,20 +169,24 @@ export default function GraphVisualizer({ algo }) {
     node.call(drag)
 
     simulation.on('tick', () => {
+      // Keep nodes within bounds
+      nodes.forEach(d => {
+        d.x = Math.max(30, Math.min(width - 30, d.x))
+        d.y = Math.max(30, Math.min(height - 30, d.y))
+        nodePositions.current[d.id] = { x: d.x, y: d.y }
+      })
+
       link
         .attr('x1', d => d.source.x)
         .attr('y1', d => d.source.y)
         .attr('x2', d => d.target.x)
         .attr('y2', d => d.target.y)
 
-      node.attr('transform', d => {
-        nodePositions.current[d.id] = { x: d.x, y: d.y }
-        return `translate(${d.x},${d.y})`
-      })
+      node.attr('transform', d => `translate(${d.x},${d.y})`)
     })
 
     return () => simulation.stop()
-  }, [currentStep, steps])
+  }, [currentStep, steps, dimensions])
 
   const current = steps[currentStep]
   const isDone = current?.done
@@ -258,14 +200,13 @@ export default function GraphVisualizer({ algo }) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      backgroundColor: '#0a0a0a', gap: '20px', padding: '32px',
-      overflow: 'auto'
+      alignItems: 'center', backgroundColor: '#0a0a0a',
+      gap: '16px', padding: '24px 32px', overflow: 'auto',
     }}>
 
       {/* TITLE */}
       <div style={{ textAlign: 'center' }}>
-        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold', marginBottom: '8px' }}>
+        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold', marginBottom: '6px' }}>
           {algo}
         </h2>
         <p style={{ color: '#555', fontSize: '0.85rem' }}>
@@ -275,16 +216,26 @@ export default function GraphVisualizer({ algo }) {
         </p>
       </div>
 
-      {/* GRAPH SVG */}
-      <div style={{
-        backgroundColor: '#111',
-        border: '1px solid #1e1e1e',
-        borderRadius: '16px',
-        padding: '8px',
-        width: '580px',
-        height: '360px',
-      }}>
-        <svg ref={svgRef} width="560" height="340" />
+      {/* GRAPH — fills available space */}
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          maxWidth: '700px',
+          flex: 1,
+          maxHeight: '380px',
+          backgroundColor: '#111',
+          border: '1px solid #1e1e1e',
+          borderRadius: '16px',
+          overflow: 'hidden',
+        }}
+      >
+        <svg
+          ref={svgRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          style={{ display: 'block' }}
+        />
       </div>
 
       {/* STATUS */}
@@ -296,11 +247,11 @@ export default function GraphVisualizer({ algo }) {
           : `⚡ Visiting node ${current?.currentNode}`}
       </div>
 
-      {/* AI BOX — ready for when you get credits */}
+      {/* AI BOX */}
       <div style={{
         backgroundColor: '#111', border: '1px solid #1e1e1e',
         borderLeft: '3px solid #6c63ff', borderRadius: '12px',
-        padding: '14px 18px', maxWidth: '560px', width: '100%',
+        padding: '14px 18px', maxWidth: '700px', width: '100%',
         color: '#555', fontSize: '0.88rem', lineHeight: '1.6',
       }}>
         <div style={{ color: '#6c63ff', fontWeight: 'bold', marginBottom: '4px', fontSize: '0.8rem' }}>
@@ -334,9 +285,9 @@ export default function GraphVisualizer({ algo }) {
       </div>
 
       {/* LEGEND */}
-      <div style={{ display: 'flex', gap: '20px' }}>
+      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
         {[
-          { color: '#1a1a1a', label: 'Unvisited', border: '#333' },
+          { color: '#1e1e1e', label: 'Unvisited', border: '#333' },
           { color: '#facc15', label: 'Current' },
           { color: '#6c63ff', label: 'Visited' },
           { color: '#22c55e', label: 'Done' },
@@ -345,7 +296,7 @@ export default function GraphVisualizer({ algo }) {
             <div style={{
               width: '12px', height: '12px', borderRadius: '50%',
               backgroundColor: item.color,
-              border: item.border ? `1px solid ${item.border}` : 'none'
+              border: `1px solid ${item.border || item.color}`
             }} />
             <span style={{ color: '#444', fontSize: '0.78rem' }}>{item.label}</span>
           </div>
