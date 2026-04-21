@@ -9,8 +9,9 @@ import { getMergeSortSteps } from './algorithms/mergeSort'
 import { getQuickSortSteps } from './algorithms/quickSort'
 import ComplexityBadge from './components/ComplexityBadge'
 import GraphVisualizer from './components/GraphVisualizer'
+import DijkstraVisualizer from './components/DijkstraVisualizer'
 
-const GRAPH_ALGOS = ['BFS', 'DFS']
+const GRAPH_ALGOS = ['BFS', 'DFS', 'Dijkstra']
 
 function getSteps(algo, arr) {
   if (algo === 'Bubble Sort') return getBubbleSortSteps(arr)
@@ -168,8 +169,10 @@ export default function Home() {
         <Sidebar selectedAlgo={selectedAlgo} onSelect={setSelectedAlgo} />
 
         {/* GRAPH VIEW */}
-        {isGraphAlgo
-          ? <GraphVisualizer algo={selectedAlgo} />
+       {isGraphAlgo
+  ? selectedAlgo === 'Dijkstra'
+    ? <DijkstraVisualizer />
+    : <GraphVisualizer algo={selectedAlgo} />
 
           /* SORTING VIEW */
           : (

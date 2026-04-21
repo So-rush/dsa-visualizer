@@ -1,13 +1,13 @@
 const algorithms = [
-  { name: 'Bubble Sort', category: 'Sorting' },
+  { name: 'Bubble Sort',    category: 'Sorting' },
   { name: 'Selection Sort', category: 'Sorting' },
   { name: 'Insertion Sort', category: 'Sorting' },
-  { name: 'Merge Sort', category: 'Sorting' },
-  { name: 'Quick Sort', category: 'Sorting' },
-  { name: 'BFS', category: 'Graph' },
-  { name: 'DFS', category: 'Graph' },
+  { name: 'Merge Sort',     category: 'Sorting' },
+  { name: 'Quick Sort',     category: 'Sorting' },
+  { name: 'BFS',            category: 'Graph' },
+  { name: 'DFS',            category: 'Graph' },
+  { name: 'Dijkstra',       category: 'Graph' },
 ]
-
 export default function Sidebar({ selectedAlgo, onSelect }) {
   const categories = [...new Set(algorithms.map(a => a.category))]
 
