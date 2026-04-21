@@ -29,7 +29,7 @@ export default function GraphVisualizer({ algo }) {
   const nodePositions = useRef({})
   const [dimensions, setDimensions] = useState({ width: 600, height: 320 })
 
-  // Measure container size
+  // Measure container
   useEffect(() => {
     if (!containerRef.current) return
     const observer = new ResizeObserver(entries => {
@@ -42,7 +42,7 @@ export default function GraphVisualizer({ algo }) {
     return () => observer.disconnect()
   }, [])
 
-  // Generate steps when algo changes
+  // Steps
   useEffect(() => {
     setIsPlaying(false)
     setCurrentStep(0)
@@ -72,7 +72,7 @@ export default function GraphVisualizer({ algo }) {
     return () => clearInterval(intervalRef.current)
   }, [isPlaying, steps, speed])
 
-  // D3 render
+  // D3
   useEffect(() => {
     if (!svgRef.current || steps.length === 0) return
 
@@ -95,10 +95,12 @@ export default function GraphVisualizer({ algo }) {
       .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(36))
-      .force('x', d3.forceX(width / 2).strength(0.05))
-      .force('y', d3.forceY(height / 2).strength(0.05))
 
-    // Draw edges
+      // ✅ FIX 4 — stronger centering
+      .force('x', d3.forceX(width / 2).strength(0.15))
+      .force('y', d3.forceY(height / 2).strength(0.15))
+
+    // Links
     const link = svg.append('g')
       .selectAll('line')
       .data(links)
@@ -120,7 +122,7 @@ export default function GraphVisualizer({ algo }) {
         return 2
       })
 
-    // Draw nodes
+    // Nodes
     const node = svg.append('g')
       .selectAll('g')
       .data(nodes)
@@ -169,10 +171,10 @@ export default function GraphVisualizer({ algo }) {
     node.call(drag)
 
     simulation.on('tick', () => {
-      // Keep nodes within bounds
       nodes.forEach(d => {
-        d.x = Math.max(30, Math.min(width - 30, d.x))
-        d.y = Math.max(30, Math.min(height - 30, d.y))
+        // ✅ FIX 3 — more padding from edges
+        d.x = Math.max(40, Math.min(width - 40, d.x))
+        d.y = Math.max(40, Math.min(height - 40, d.y))
         nodePositions.current[d.id] = { x: d.x, y: d.y }
       })
 
@@ -192,38 +194,42 @@ export default function GraphVisualizer({ algo }) {
   const isDone = current?.done
 
   const btnStyle = {
-    padding: '10px 20px', borderRadius: '8px',
-    border: '1px solid #2a2a2a', backgroundColor: '#1a1a1a',
-    color: '#aaa', cursor: 'pointer', fontSize: '0.85rem',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    border: '1px solid #2a2a2a',
+    backgroundColor: '#1a1a1a',
+    color: '#aaa',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
   }
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', backgroundColor: '#0a0a0a',
-      gap: '16px', padding: '24px 32px', overflow: 'auto',
+
+      // ✅ FIX 1 — no scroll + tighter layout
+      gap: '12px',
+      padding: '16px 32px',
+      overflow: 'hidden',
     }}>
 
-      {/* TITLE */}
       <div style={{ textAlign: 'center' }}>
-        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold', marginBottom: '6px' }}>
+        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 'bold' }}>
           {algo}
         </h2>
-        <p style={{ color: '#555', fontSize: '0.85rem' }}>
-          {algo === 'BFS'
-            ? 'Explores level by level using a Queue'
-            : 'Explores depth first using Recursion'}
-        </p>
       </div>
 
-      {/* GRAPH — fills available space */}
       <div
         ref={containerRef}
         style={{
           width: '100%',
           maxWidth: '700px',
           flex: 1,
-          maxHeight: '380px',
+
+          // ✅ FIX 2 — reduced height
+          maxHeight: '300px',
+
           backgroundColor: '#111',
           border: '1px solid #1e1e1e',
           borderRadius: '16px',
@@ -234,78 +240,15 @@ export default function GraphVisualizer({ algo }) {
           ref={svgRef}
           width={dimensions.width}
           height={dimensions.height}
-          style={{ display: 'block' }}
         />
       </div>
 
-      {/* STATUS */}
-      <div style={{ color: isDone ? '#22c55e' : '#888', fontSize: '0.9rem', minHeight: '20px' }}>
+      <div style={{ color: isDone ? '#22c55e' : '#888', fontSize: '0.9rem' }}>
         {isDone
-          ? '✅ Traversal complete! All nodes visited.'
-          : current?.type === 'explore'
-          ? `🔍 Exploring edge: ${current.exploringEdge?.source} → ${current.exploringEdge?.target}`
-          : `⚡ Visiting node ${current?.currentNode}`}
+          ? '✅ Traversal complete!'
+          : `Visiting ${current?.currentNode}`}
       </div>
 
-      {/* AI BOX */}
-      <div style={{
-        backgroundColor: '#111', border: '1px solid #1e1e1e',
-        borderLeft: '3px solid #6c63ff', borderRadius: '12px',
-        padding: '14px 18px', maxWidth: '700px', width: '100%',
-        color: '#555', fontSize: '0.88rem', lineHeight: '1.6',
-      }}>
-        <div style={{ color: '#6c63ff', fontWeight: 'bold', marginBottom: '4px', fontSize: '0.8rem' }}>
-          🤖 AI EXPLANATION
-        </div>
-        🔒 AI explanations coming soon!
-      </div>
-
-      {/* SPEED */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <span style={{ color: '#444', fontSize: '0.82rem' }}>🐢 Slow</span>
-        <input type="range" min="100" max="1500" step="100"
-          value={1600 - speed}
-          onChange={e => setSpeed(1600 - Number(e.target.value))}
-          style={{ width: '140px', accentColor: '#6c63ff', cursor: 'pointer' }}
-        />
-        <span style={{ color: '#444', fontSize: '0.82rem' }}>Fast ⚡</span>
-      </div>
-
-      {/* CONTROLS */}
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={() => setCurrentStep(p => Math.max(0, p - 1))} style={btnStyle}>⬅ Prev</button>
-        <button onClick={() => setIsPlaying(p => !p)} style={{
-          ...btnStyle, backgroundColor: '#6c63ff',
-          color: '#fff', border: '1px solid #6c63ff', padding: '10px 32px'
-        }}>
-          {isPlaying ? '⏸ Pause' : '▶ Play'}
-        </button>
-        <button onClick={() => setCurrentStep(p => Math.min(steps.length - 1, p + 1))} style={btnStyle}>Next ➡</button>
-        <button onClick={() => { setIsPlaying(false); setCurrentStep(0) }} style={btnStyle}>🔄 Reset</button>
-      </div>
-
-      {/* LEGEND */}
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        {[
-          { color: '#1e1e1e', label: 'Unvisited', border: '#333' },
-          { color: '#facc15', label: 'Current' },
-          { color: '#6c63ff', label: 'Visited' },
-          { color: '#22c55e', label: 'Done' },
-        ].map(item => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{
-              width: '12px', height: '12px', borderRadius: '50%',
-              backgroundColor: item.color,
-              border: `1px solid ${item.border || item.color}`
-            }} />
-            <span style={{ color: '#444', fontSize: '0.78rem' }}>{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ color: '#2a2a2a', fontSize: '0.78rem' }}>
-        Step {currentStep} / {steps.length - 1}
-      </p>
     </div>
   )
 }
