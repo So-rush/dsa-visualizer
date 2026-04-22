@@ -10,8 +10,9 @@ import { getQuickSortSteps } from './algorithms/quickSort'
 import ComplexityBadge from './components/ComplexityBadge'
 import GraphVisualizer from './components/GraphVisualizer'
 import DijkstraVisualizer from './components/DijkstraVisualizer'
+import StackVisualizer from './components/StackVisualizer'
 
-const GRAPH_ALGOS = ['BFS', 'DFS', 'Dijkstra']
+const GRAPH_ALGOS = ['BFS', 'DFS', 'Dijkstra','Stack']
 
 function getSteps(algo, arr) {
   if (algo === 'Bubble Sort') return getBubbleSortSteps(arr)
@@ -172,6 +173,8 @@ export default function Home() {
        {isGraphAlgo
   ? selectedAlgo === 'Dijkstra'
     ? <DijkstraVisualizer />
+    : selectedAlgo === 'Stack'
+    ? <StackVisualizer />
     : <GraphVisualizer algo={selectedAlgo} />
 
           /* SORTING VIEW */

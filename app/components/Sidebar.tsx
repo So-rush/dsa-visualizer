@@ -7,6 +7,7 @@ const algorithms = [
   { name: 'BFS',            category: 'Graph' },
   { name: 'DFS',            category: 'Graph' },
   { name: 'Dijkstra',       category: 'Graph' },
+  { name: 'Stack',          category: 'Data Structures' },
 ]
 export default function Sidebar({ selectedAlgo, onSelect }) {
   const categories = [...new Set(algorithms.map(a => a.category))]
